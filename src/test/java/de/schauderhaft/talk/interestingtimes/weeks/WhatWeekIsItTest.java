@@ -15,24 +15,91 @@
  */
 package de.schauderhaft.talk.interestingtimes.weeks;
 
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Assume;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import org.assertj.core.api.Assertions;
+import net.jqwik.api.Provide;
+import org.junit.jupiter.api.Test;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.temporal.WeekFields;
+import java.util.Random;
+
+import static org.assertj.core.api.Assertions.*;
 
 public class WhatWeekIsItTest {
 
 
 	@Property
-	void lengthOfConcatenatedStringIsGreaterThanLengthOfEach(
-			@ForAll LocalDate ld1, @ForAll LocalDate ld2
-	) {
-		LocalDate greaterDate = ld1.isAfter(ld2) ? ld1 : ld2;
-		LocalDate smallerDate = ld1.isBefore(ld2) ? ld1 : ld2;
+	void weekOfYear(@ForAll LocalDate date) {
+		assertThat(week(date))
+				.describedAs("week of %s is %s".formatted(date, week(date)))
+				.isBetween(1, 53);
+	}
 
-		Assertions.assertThat(greaterDate.get(WeekFields.ISO.weekOfYear())).isGreaterThanOrEqualTo(greaterDate.get(WeekFields.ISO.weekOfYear()));
+	@Property
+	void weekOfYearIsIncreasing(@ForAll("datesIn2022") LocalDate date) {
+
+		Assume.that(date.isBefore(LocalDate.of(2022, 12, 31)));
+
+		final LocalDate nextDay = date.plusDays(1);
+
+		assertThat(date).isBefore(nextDay);
+		assertThat(week(date))
+				.describedAs(date.toString())
+				.isLessThanOrEqualTo(week(nextDay));
+	}
+
+	@Property
+	void weekOfYearIsConstantInWeek(@ForAll("wednesday") LocalDate date) {
+
+		final LocalDate nextDay = date.plusDays(1);
+
+		assertThat(week(date))
+				.describedAs(date.toString())
+				.isEqualTo(week(nextDay));
+	}
+
+	@Test
+	void weekOfYear() {
+		for (int i = 1900; i < 2100; i++) {
+			final LocalDate startOfYear = LocalDate.of(i, 1,1);
+			final LocalDate endOfYear = LocalDate.of(i, 12,31);
+
+			System.out.printf("%s %s - %s %s%n", startOfYear, week(startOfYear), endOfYear, week(endOfYear) );
+
+			assertThat(week(endOfYear))
+					.describedAs(endOfYear.toString())
+					.isIn(52,53);
+		}
+
+	}
+
+	private int week(LocalDate endOfYear) {
+		return endOfYear.get(WeekFields.ISO.weekOfYear());
+	}
+
+	@Provide
+	Arbitrary<LocalDate> datesIn2022() {
+		return Arbitraries.randomValue(this::randomDateIn2022);
+	}
+
+	private LocalDate randomDateIn2022(Random random) {
+		final int nextInt = random.nextInt(365);
+		return LocalDate.of(2022, 1, 1).plusDays(nextInt);
+	}
+
+	@Provide
+	Arbitrary<LocalDate> wednesday() {
+		return Arbitraries.randomValue(this::randomWednesday);
+	}
+
+	private LocalDate randomWednesday(Random random) {
+		return LocalDate.of(2022, 2, 21).plusDays(7L*random.nextInt(-500,500));
 	}
 
 }
