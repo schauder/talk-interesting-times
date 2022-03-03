@@ -23,9 +23,7 @@ import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 import org.junit.jupiter.api.Test;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.temporal.WeekFields;
 import java.util.Random;
 
@@ -55,7 +53,7 @@ public class WhatWeekIsItTest {
 	}
 
 	@Property
-	void weekOfYearIsConstantInWeek(@ForAll("wednesday") LocalDate date) {
+	void weekOfYearIsConstantInWeek(@ForAll("monday") LocalDate date) {
 
 		final LocalDate nextDay = date.plusDays(1);
 
@@ -79,8 +77,8 @@ public class WhatWeekIsItTest {
 
 	}
 
-	private int week(LocalDate endOfYear) {
-		return endOfYear.get(WeekFields.ISO.weekOfYear());
+	static int week(LocalDate date) {
+		return date.get(WeekFields.ISO.weekOfYear());
 	}
 
 	@Provide
@@ -94,11 +92,11 @@ public class WhatWeekIsItTest {
 	}
 
 	@Provide
-	Arbitrary<LocalDate> wednesday() {
-		return Arbitraries.randomValue(this::randomWednesday);
+	Arbitrary<LocalDate> monday() {
+		return Arbitraries.randomValue(this::randomMonday);
 	}
 
-	private LocalDate randomWednesday(Random random) {
+	private LocalDate randomMonday(Random random) {
 		return LocalDate.of(2022, 2, 21).plusDays(7L*random.nextInt(-500,500));
 	}
 
