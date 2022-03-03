@@ -17,14 +17,13 @@ package de.schauderhaft.talk.interestingtimes.weeks;
 
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import net.jqwik.api.footnotes.EnableFootnotes;
+import net.jqwik.api.footnotes.Footnotes;
 import net.jqwik.api.lifecycle.BeforeProperty;
 import oracle.jdbc.pool.OracleDataSource;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.testcontainers.containers.OracleContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -33,7 +32,8 @@ import java.util.Collections;
 import static de.schauderhaft.talk.interestingtimes.weeks.WhatWeekIsItTest.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class WhatYearTest {
+@EnableFootnotes
+class OracleVsJavaTest {
 
 	OracleContainer oracle = new OracleContainer("gvenzl/oracle-xe").withReuse(true);
 	private NamedParameterJdbcTemplate template;
@@ -56,11 +56,28 @@ public class WhatYearTest {
 	}
 
 	@Property
-	void thereIsOneIsoStandard(@ForAll LocalDate date) {
+	void thereIsOneIsoStandard(@ForAll LocalDate date, Footnotes footnotes) {
 
-		Integer weekFromOracle = template.queryForObject("select to_char(:date, 'IW') from dual", Collections.singletonMap("date", date), Integer.class);
+		footnotes.addFootnote(table(date.minusDays(7)));
+
+		Integer weekFromOracle = oracleIsoWeekOfYear(date);
 		Integer weekFromJava = week(date);
 
 		assertThat(weekFromJava).isEqualTo(weekFromOracle);
+	}
+
+	@Nullable
+	private Integer oracleIsoWeekOfYear(LocalDate date) {
+		return template.queryForObject("select to_char(:date, 'IW') from dual", Collections.singletonMap("date", date), Integer.class);
+	}
+
+	private String table(LocalDate start) {
+		StringBuilder result= new StringBuilder("date \t day of week \t week Oracle \t week Java\n");
+		for (int i = 0; i <= 15; i++) {
+			LocalDate date = start.plusDays(i);
+
+			result.append("%s \t %s \t %s \t %s\n".formatted(date, date.getDayOfWeek(),oracleIsoWeekOfYear(date), week(date)));
+		}
+		return result.toString();
 	}
 }

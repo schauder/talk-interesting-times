@@ -85,12 +85,6 @@ public class WhatWeekIsItTest {
 		}
 	}
 
-	@Test
-	void wtf() {
-
-		System.out.println(printTable(LocalDate.of(2018, 12, 25)));
-	}
-
 	private String printTable(LocalDate start) {
 		StringBuilder result= new StringBuilder("date \t day of week \t week\n");
 		for (int i = 0; i <= 15; i++) {
