@@ -21,6 +21,8 @@ import net.jqwik.api.Assume;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.footnotes.EnableFootnotes;
+import net.jqwik.api.footnotes.Footnotes;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -29,20 +31,25 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.*;
 
+@EnableFootnotes
 public class WhatWeekIsItTest {
 
-
 	@Property
-	void weekOfYear(@ForAll LocalDate date) {
+	void weekOfYearIsBetween1And53(@ForAll LocalDate date, Footnotes footnotes) {
+
+		footnotes.addFootnote(printTable(date.minusDays(7)));
+
 		assertThat(week(date))
 				.describedAs("week of %s is %s".formatted(date, week(date)))
 				.isBetween(1, 53);
 	}
 
 	@Property
-	void weekOfYearIsIncreasing(@ForAll("datesIn2022") LocalDate date) {
+	void weekOfYearIsIncreasing(@ForAll("datesIn2022") LocalDate date, Footnotes footnotes) {
 
 		Assume.that(date.isBefore(LocalDate.of(2022, 12, 31)));
+
+		footnotes.addFootnote(printTable(date.minusDays(7)));
 
 		final LocalDate nextDay = date.plusDays(1);
 
@@ -53,7 +60,9 @@ public class WhatWeekIsItTest {
 	}
 
 	@Property
-	void weekOfYearIsConstantInWeek(@ForAll("monday") LocalDate date) {
+	void weekOfYearIsConstantInWeek(@ForAll("monday") LocalDate date, Footnotes footnotes) {
+
+		footnotes.addFootnote(printTable(date.minusDays(7)));
 
 		final LocalDate nextDay = date.plusDays(1);
 
@@ -65,16 +74,31 @@ public class WhatWeekIsItTest {
 	@Test
 	void weekOfYear() {
 		for (int i = 1900; i < 2100; i++) {
-			final LocalDate startOfYear = LocalDate.of(i, 1,1);
-			final LocalDate endOfYear = LocalDate.of(i, 12,31);
+			final LocalDate startOfYear = LocalDate.of(i, 1, 1);
+			final LocalDate endOfYear = LocalDate.of(i, 12, 31);
 
-			System.out.printf("%s %s - %s %s%n", startOfYear, week(startOfYear), endOfYear, week(endOfYear) );
+			System.out.printf("%s %s - %s %s%n", startOfYear, week(startOfYear), endOfYear, week(endOfYear));
 
 			assertThat(week(endOfYear))
 					.describedAs(endOfYear.toString())
-					.isIn(52,53);
+					.isIn(52, 53);
 		}
+	}
 
+	@Test
+	void wtf() {
+
+		System.out.println(printTable(LocalDate.of(2018, 12, 25)));
+	}
+
+	private String printTable(LocalDate start) {
+		StringBuilder result= new StringBuilder("date \t day of week \t week\n");
+		for (int i = 0; i <= 15; i++) {
+			LocalDate date = start.plusDays(i);
+
+			result.append("%s \t %s \t %s\n".formatted(date, date.getDayOfWeek(), week(date)));
+		}
+		return result.toString();
 	}
 
 	static int week(LocalDate date) {
@@ -97,7 +121,7 @@ public class WhatWeekIsItTest {
 	}
 
 	private LocalDate randomMonday(Random random) {
-		return LocalDate.of(2022, 2, 21).plusDays(7L*random.nextInt(-500,500));
+		return LocalDate.of(2022, 2, 21).plusDays(7L * random.nextInt(-500, 500));
 	}
 
 }
